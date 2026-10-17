@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Generated synthetic data, collector state, build output
+data/
+data-volume/
+state/
+state-volume/
+build/
+*.zip
+
+# Secrets and local settings: never commit these
+.env
+.env.*
+!.env.example
+
+# Terraform: state holds resource IDs (and generated passwords), so it stays local
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/*.tfvars
+!infra/example.tfvars
+infra/tfplan
+crash.log
+
+# Personal interview notes (kept on disk, never pushed)
+INTERVIEW_NOTES.md

@@ -1,0 +1,5 @@
+-r requirements.txt
+-r dq_lambda/requirements.txt
+pytest==9.1.1
+ruff==0.17.1
+responses==0.26.3

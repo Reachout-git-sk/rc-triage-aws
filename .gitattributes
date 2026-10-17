@@ -1,0 +1,5 @@
+# Shell scripts must keep LF line endings or bash fails on Linux (and on the EC2 host).
+*.sh text eol=lf
+*.py text eol=lf
+*.tf text eol=lf
+*.sql text eol=lf

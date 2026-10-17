@@ -1,0 +1,29 @@
+[project]
+name = "rc-triage-aws"
+version = "0.1.0"
+description = "Practice project: Slurm job-failure triage on AWS, built on synthetic data"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["build", "data", "state"]
+
+[tool.ruff.lint]
+# E/W/F: pycodestyle + pyflakes, I: import order, B: bugbear, UP: modern syntax,
+# SIM: simplifications, S: bandit security checks.
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "S"]
+# `ruff format` handles line length; long SQL and log strings are left as they are.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S603", "S607"]
+# The generator and the fake upstream use `random` for fake data, not for security.
+"synth/**" = ["S311"]
+"fake_gpu_metrics/**" = ["S311"]
+"triage/client.py" = ["S311"]
+"api/upstream.py" = ["S311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["db: needs PostgreSQL (set TEST_DATABASE_URL)"]

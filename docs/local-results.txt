@@ -1,0 +1,7 @@
+Local results, 2026-10-17 (Windows 11 laptop, Docker Desktop, Postgres 16 in Docker)
+- pytest: 89 passed (unit + API + DB + collector), ruff clean
+- Classifier vs synthetic ground truth (8 days, 23,772 jobs, 2,354 failures): 99.0% category+owner; misses are jobs with no log file -> unknown/human_review
+- Black-hole node cpu-087 flagged; 68 of its failures marked node_suspect
+- Volume test (--volume-test): 92,423 finished jobs, 10,203 failures in one 24 h window:
+  parse + classify 3.97 s, send 21 batches of 500 to the API 1.0 s, collector wall time ~7 s
+- Upstream slow: node health answers in 3.01 s with partial=true (3.0 s budget); upstream down: partial=true after 3 attempts

@@ -1,0 +1,3 @@
+# Packaged into the Lambda zip. pg8000 is pure Python, so the zip built on any
+# OS runs on Lambda's Linux. boto3 is already part of the Lambda Python runtime.
+pg8000==1.31.5

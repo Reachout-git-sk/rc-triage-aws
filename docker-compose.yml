@@ -1,0 +1,74 @@
+# Local stack: PostgreSQL 16 + migrations + the API (gunicorn) + the fake GPU-metrics upstream.
+#   cp .env.example .env   # then edit the values
+#   docker compose up --build
+# Ports are bound to 127.0.0.1 only, so nothing is reachable from the network.
+name: rc-triage
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?copy .env.example to .env and set it}
+      POSTGRES_DB: triage
+    ports:
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d triage"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build: .
+    image: rc-triage-api:local
+    command: ["python", "-m", "migrations.migrate"]
+    environment:
+      MIGRATE_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/triage
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set in .env}
+      DQ_DB_PASSWORD: ${DQ_DB_PASSWORD:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  gpu-metrics:
+    image: rc-triage-api:local
+    command: ["gunicorn", "-c", "gunicorn.conf.py", "fake_gpu_metrics.server:app"]
+    environment:
+      PORT: "9100"
+      GUNICORN_WORKERS: "1"
+      GUNICORN_THREADS: "8"
+      FAKE_GPU_MODE: normal
+    ports:
+      - "127.0.0.1:9100:9100"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    image: rc-triage-api:local
+    environment:
+      DATABASE_URL: postgresql://triage_app:${APP_DB_PASSWORD}@db:5432/triage
+      INGEST_API_KEY: ${INGEST_API_KEY:?set in .env}
+      GPU_METRICS_URL: http://gpu-metrics:9100
+      APP_VERSION: local
+      FAULT_INJECTION: "true"
+    ports:
+      - "127.0.0.1:8080:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      gpu-metrics:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  pgdata:
