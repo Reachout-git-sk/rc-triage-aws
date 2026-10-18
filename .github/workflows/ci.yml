@@ -45,4 +45,7 @@ jobs:
       - name: smoke test the image
         run: |
           docker run --rm rc-triage-api:ci python -c "import api.app, migrations.migrate, fake_gpu_metrics.server; print('imports ok')"
-          docker run --rm rc-triage-api:ci gunicorn --check-config -c gunicorn.conf.py "api.app:create_app()"
+          # --check-config really loads the app. The app refuses to start without DATABASE_URL,
+          # but it only connects on the first request, so a dummy URL is enough here.
+          docker run --rm -e DATABASE_URL=postgresql://unused@127.0.0.1:1/none rc-triage-api:ci \
+            gunicorn --check-config -c gunicorn.conf.py "api.app:create_app()"
