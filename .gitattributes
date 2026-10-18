@@ -3,3 +3,4 @@
 *.py text eol=lf
 *.tf text eol=lf
 *.sql text eol=lf
+*.tftpl text eol=lf

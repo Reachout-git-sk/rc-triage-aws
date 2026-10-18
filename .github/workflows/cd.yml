@@ -1,0 +1,60 @@
+name: CD
+
+# On every push to main: run CI, then (if enabled) build, push and deploy.
+#
+# Two gates before anything touches AWS:
+#   1. repository variable DEPLOY_ENABLED must be "true" (set it to "false" after
+#      `terraform destroy`, so pushes stop trying to deploy to a stack that is gone);
+#   2. the "production" GitHub Environment requires a reviewer to click Approve.
+# AWS access uses OIDC: no AWS keys are stored in GitHub.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # never kill a deploy halfway
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # lets this job ask GitHub for an OIDC token
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      IMAGE_TAG: ${{ github.sha }}
+      ECR_REPOSITORY_URL: ${{ vars.ECR_REPOSITORY_URL }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Get short-lived AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push the image, tagged with the git SHA
+        run: |
+          repo_name="${ECR_REPOSITORY_URL#*/}"
+          if aws ecr describe-images --repository-name "$repo_name" --image-ids imageTag="$IMAGE_TAG" >/dev/null 2>&1; then
+            echo "image $IMAGE_TAG already in ECR (tags are immutable); skipping build"
+          else
+            docker build --build-arg APP_VERSION="$IMAGE_TAG" -t "$ECR_REPOSITORY_URL:$IMAGE_TAG" .
+            docker push "$ECR_REPOSITORY_URL:$IMAGE_TAG"
+          fi
+
+      - name: Deploy to EC2 through SSM (automatic rollback on failure)
+        run: bash deploy/send_deploy.sh "${{ vars.EC2_INSTANCE_ID }}" "$IMAGE_TAG"

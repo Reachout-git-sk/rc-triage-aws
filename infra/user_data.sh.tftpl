@@ -1,0 +1,31 @@
+#!/bin/bash
+# Runs once, as root, on the instance's first boot.
+set -euxo pipefail
+
+dnf install -y docker
+systemctl enable --now docker
+
+# A t3.micro has 1 GiB of RAM: add 1 GiB of swap so a memory spike slows us down
+# instead of getting a container killed.
+if [ ! -f /swapfile ]; then
+  dd if=/dev/zero of=/swapfile bs=1M count=1024
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+fi
+
+# Non-secret settings for deploy.sh. Secrets are fetched from Secrets Manager at deploy time.
+mkdir -p /opt/rc-triage
+cat > /opt/rc-triage/config.env <<'EOF'
+AWS_REGION=${region}
+ECR_REPO=${ecr_repo_url}
+APP_SECRET_ARN=${app_secret_arn}
+DB_ADMIN_SECRET_ARN=${db_admin_secret_arn}
+DB_HOST=${db_host}
+DB_PORT=${db_port}
+DB_NAME=${db_name}
+APP_DB_USER=triage_app
+LOG_GROUP=${log_group}
+EOF
+chmod 600 /opt/rc-triage/config.env
