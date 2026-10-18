@@ -16,8 +16,15 @@ All data is synthetic (see `synth/generate.py`). Dates are when each result was 
 | Data-quality report | all six checks PASS on the 8-day data set |
 | Deploy rehearsal (`deploy/test_deploy_local.sh`) | v1 deployed; v1 -> v2 upgrade; a release that crashes on startup was detected by the health check and v2 was restored automatically (deploy exit code 1) |
 
-## AWS
+## AWS: not deployed (status on 2026-10-17)
 
-Not run yet. This section will hold the dated AWS results: ingest and queries through the
-API, the Lambda report, a 5xx alarm triggered on purpose, a broken deploy that rolled
-back automatically, the cost of the run, and the teardown check.
+The Terraform in `infra/` was written and checked with `terraform validate` (AWS provider
+6.69.1), and the deploy script's swap, health check and automatic rollback were rehearsed
+locally (`deploy/test_deploy_local.sh`). **Nothing has been created on a real AWS
+account**: the deploy was paused on 2026-10-17 because an AWS account needs paid usage
+beyond the free tier for this stack (about $0.04/hour while running, see
+`docs/AWS_GUIDE.md`).
+
+When it does run, this section will hold the dated AWS results: ingest and queries
+through the API, the Lambda report, a 5xx alarm triggered on purpose, a broken deploy
+that rolled back automatically, the cost of the run, and the teardown check.

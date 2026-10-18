@@ -110,6 +110,10 @@ bash deploy/test_deploy_local.sh    # rehearses deploy + automatic rollback with
 
 ## Deploy to AWS
 
+**Status (2026-10-17): written and validated, not deployed.** The Terraform passes
+`terraform validate` and the deploy and rollback logic was rehearsed locally, but nothing has
+run on a real AWS account yet.
+
 Read [docs/AWS_SETUP.md](docs/AWS_SETUP.md) first: account safety (MFA, budget alarm, no
 root keys) comes **before** anything is created.
 
@@ -140,9 +144,8 @@ commands are in docs/AWS_SETUP.md, section "After destroy").
 
 ## Results
 
-See [docs/RESULTS.md](docs/RESULTS.md) for dated results (local runs, the volume test, and
-the AWS run: ingest and queries, the Lambda report, a 5xx alarm triggered on purpose, a
-broken deploy that rolled back, the cost, and the teardown check).
+See [docs/RESULTS.md](docs/RESULTS.md) for dated results: local runs, the volume test and the
+deploy rehearsal. The AWS section stays empty until the stack has really run on AWS.
 
 ## Layout
 
